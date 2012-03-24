@@ -12,9 +12,9 @@ urlpatterns = patterns('django.views.generic.list_detail',
                        )
 
 urlpatterns += patterns('zinnia.views.categories',
-                        url(r'^(?P<path>\w+)/page/(?P<page>\d+)/$',
+                        url(r'^(?P<path>[-\w]+)/page/(?P<page>\d+)/$',
                             'category_detail',
                             name='zinnia_category_detail_paginated'),
-                        url(r'^(?P<path>\w+)/$', 'category_detail',
+                        url(r'^(?P<path>[-\w]+)/$', 'category_detail',
                             name='zinnia_category_detail'),
                         )
