@@ -67,6 +67,31 @@ def protect_entry(view):
     return wrapper
 
 
+def protect_category_entry(view):
+    """Decorator performing a security check if needed
+    around the generic.date_based.entry_detail view
+    and specify the template used to render the entry"""
+
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        """Do security check and retrieve the template"""
+        request = args[0]
+        categoria = kwargs['categoria']
+        del kwargs['categoria']
+        entry = get_object_or_404(kwargs['queryset'], slug=kwargs['slug'],
+                                  categories__slug=categoria)
+
+
+        if entry.login_required and not request.user.is_authenticated():
+            return login(request, 'zinnia/login.html')
+        if entry.password and entry.password != \
+               request.session.get('zinnia_entry_%s_password' % entry.pk):
+            return password(request, entry)
+        kwargs['template_name'] = entry.template
+        return view(*args, **kwargs)
+    return wrapper
+
+
 def template_name_for_entry_queryset_filtered(model_type, model_name):
     """Return a custom template name for views
     returning a queryset of Entry filtered by another model."""
