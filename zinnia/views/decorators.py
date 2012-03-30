@@ -78,8 +78,7 @@ def protect_category_entry(view):
         request = args[0]
         categoria = kwargs['categoria']
         del kwargs['categoria']
-        entry = get_object_or_404(kwargs['queryset'], slug=kwargs['slug'],
-                                  categories__slug=categoria)
+        entry = get_object_or_404(kwargs['queryset'], id=kwargs['object_id'])
 
 
         if entry.login_required and not request.user.is_authenticated():
