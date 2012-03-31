@@ -184,16 +184,17 @@ class EntryAbstractClass(models.Model):
         """Return the previous entry"""
         request = get_request()
         path = request.path.split('/')
-        previous_entry = None
+        find_this_entry = False
         if path[1] == 'archivio' and path[2] == 'categories':
             categoria = path[3]
             for entry in Entry.published.filter(
-                categories__slug=categoria, creation_date__lte=self.creation_date).order_by('-creation_date', 'id'):
+                categories__slug=categoria, creation_date__lte=self.creation_date).order_by('-creation_date', '-id'):
                 # se questo e' true vuol dire che il giro prima ho trovato l'attuale entry;
                 # quindi questa e' la successiva
+                if find_this_entry:
+                    return entry
                 if entry.id == self.id:
-                    return previous_entry
-                previous_entry = entry
+                    find_this_entry = True
         return None
 
     @property
