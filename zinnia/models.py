@@ -22,6 +22,7 @@ from django.contrib.markup.templatetags.markup import restructuredtext
 from mptt.models import MPTTModel
 from mptt.models import TreeForeignKey
 from tagging.fields import TagField
+from dlight.middleware.thread_local import get_request
 
 from zinnia.settings import UPLOAD_TO
 from zinnia.settings import MARKUP_LANGUAGE
@@ -181,18 +182,37 @@ class EntryAbstractClass(models.Model):
     @property
     def previous_entry(self):
         """Return the previous entry"""
-        entries = Entry.published.filter(
-            creation_date__lt=self.creation_date)[:1]
-        if entries:
-            return entries[0]
+        request = get_request()
+        path = request.path.split('/')
+        previous_entry = None
+        if path[1] == 'archivio' and path[2] == 'categories':
+            categoria = path[3]
+            for entry in Entry.published.filter(
+                categories__slug=categoria, creation_date__lte=self.creation_date).order_by('-creation_date', 'id'):
+                # se questo e' true vuol dire che il giro prima ho trovato l'attuale entry;
+                # quindi questa e' la successiva
+                if entry.id == self.id:
+                    return previous_entry
+                previous_entry = entry
+        return None
 
     @property
     def next_entry(self):
         """Return the next entry"""
-        entries = Entry.published.filter(
-            creation_date__gt=self.creation_date).order_by('creation_date')[:1]
-        if entries:
-            return entries[0]
+        request = get_request()
+        path = request.path.split('/')
+        find_this_entry = False
+        if path[1] == 'archivio' and path[2] == 'categories':
+            categoria = path[3]
+            for entry in Entry.published.filter(
+                categories__slug=categoria, creation_date__gte=self.creation_date).order_by('creation_date', 'id'):
+                # se questo e' true vuol dire che il giro prima ho trovato l'attuale entry;
+                # quindi questa e' la successiva
+                if find_this_entry:
+                    return entry
+                if entry.id == self.id:
+                    find_this_entry = True
+        return None
 
     @property
     def word_count(self):
@@ -265,7 +285,7 @@ class EntryAbstractClass(models.Model):
     class Meta:
         """Entry's Meta"""
         abstract = True
-        ordering = ['-creation_date']
+        ordering = ['-creation_date', 'id']
         get_latest_by = 'creation_date'
         verbose_name = _('entry')
         verbose_name_plural = _('entries')
